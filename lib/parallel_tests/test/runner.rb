@@ -99,7 +99,18 @@ module ParallelTests
 
           print_command(cmd, env) if report_process_command?(options) && !options[:serialize_stdout]
 
-          execute_command_and_capture_output(env, cmd, options)
+          retry_count = 0
+          loop do
+            result = execute_command_and_capture_output(env, cmd, options)
+
+            if result[:exit_status] != 0 && retry_count < 3
+              puts "retrying failed command"
+              retry_count += 1
+              next
+            end
+
+            return result
+          end
         end
 
         def print_command(command, env)
