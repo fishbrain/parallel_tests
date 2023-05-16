@@ -7,7 +7,7 @@ module ParallelTests
     class Runner
       RuntimeLogTooSmallError = Class.new(StandardError)
       MAX_RETRIES = 3
-      RETRY_FAILURE_TIME_WINDOW = 10 # seconds
+      RETRY_FAILURE_TIME_WINDOW = 20 # seconds
 
       class << self
         # --- usually overwritten by other runners
