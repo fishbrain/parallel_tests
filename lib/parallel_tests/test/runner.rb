@@ -6,6 +6,8 @@ module ParallelTests
   module Test
     class Runner
       RuntimeLogTooSmallError = Class.new(StandardError)
+      MAX_RETRIES = 3
+      RETRY_FAILURE_TIME_WINDOW = 10 # seconds
 
       class << self
         # --- usually overwritten by other runners
@@ -101,9 +103,14 @@ module ParallelTests
 
           retry_count = 0
           loop do
+            start_time = Time.now
             result = execute_command_and_capture_output(env, cmd, options)
+            end_time = Time.now
 
-            if result[:exit_status] != 0 && retry_count < 3
+            # do not retry if it doesn't fail within RETRY_FAILURE_TIME_WINDOW seconds
+            return result if result[:exit_status] != 0 && (end_time - start_time) > RETRY_FAILURE_TIME_WINDOW
+
+            if result[:exit_status] != 0 && retry_count < MAX_RETRIES
               puts "retrying failed command"
               retry_count += 1
               next
