@@ -110,8 +110,8 @@ module ParallelTests
             # do not retry if it doesn't fail within RETRY_FAILURE_TIME_WINDOW seconds
             return result if result[:exit_status] != 0 && (end_time - start_time) > RETRY_FAILURE_TIME_WINDOW
 
-            if result[:exit_status] != 0 && retry_count < MAX_RETRIES
-              puts "retrying failed command"
+            if result[:exit_status] != 0 && retry_count < MAX_RETRIES && !options[:no_retries]
+              puts "retrying failed command: #{cmd}"
               retry_count += 1
               next
             end
