@@ -7,7 +7,6 @@ module ParallelTests
     class Runner
       RuntimeLogTooSmallError = Class.new(StandardError)
       MAX_RETRIES = 3
-      RETRY_FAILURE_TIME_WINDOW = 20 # seconds
 
       class << self
         # --- usually overwritten by other runners
@@ -103,14 +102,11 @@ module ParallelTests
 
           retry_count = 0
           loop do
-            start_time = Time.now
             result = execute_command_and_capture_output(env, cmd, options)
-            end_time = Time.now
 
-            # do not retry if it doesn't fail within RETRY_FAILURE_TIME_WINDOW seconds
-            return result if result[:exit_status] != 0 && (end_time - start_time) > RETRY_FAILURE_TIME_WINDOW
+            return result if result[:exit_status] == 0
 
-            if result[:exit_status] != 0 && retry_count < MAX_RETRIES && !options[:no_retries]
+            if !options[:no_retries] && retry_count < MAX_RETRIES && retryable_failure?(result)
               puts "retrying failed command: #{cmd}"
               retry_count += 1
               next
@@ -118,6 +114,12 @@ module ParallelTests
 
             return result
           end
+        end
+
+        def retryable_failure?(result)
+          return true if result[:command].include?('db:setup') # always retry db:setup commands
+
+          result[:stdout].include?('can\'t modify frozen Array')
         end
 
         def print_command(command, env)
